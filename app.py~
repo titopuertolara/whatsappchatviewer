@@ -1,8 +1,10 @@
 from dash import Dash,dcc,html,Output,Input,State
 import os
-from utils import upload_file,list_files,dummy_connection
+from utils import upload_file,list_files,dummy_connection,create_word_cloud
 import sqlite3
 import pandas as pd
+
+import base64
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -14,19 +16,21 @@ files_list=list_files(path)
 db_obj=dummy_connection('')
 app.layout = html.Div([
 	html.Div([
+	   html.Div(id='uploader-div',
+			children=[dcc.Upload(id='file-button',children=[html.Button('SUBIR ARCHIVO')])],
+			style={'display':'inline-block'}
+			),
+		
 		html.Div([
 				dcc.Loading(id='loading-gif',
 					children=[html.P(id='filename-p')],
 					type='circle'
 				)
-		],style={'display':'inline-block','margin-left':'10%'}),
-		html.Div(id='uploader-div',
-			children=[dcc.Upload(id='file-button',children=[html.Button('SUBIR')])],
-			style={'display':'inline-block','margin-left':'10%'}
-			),
-		
+		],style={'display':'inline-block'})
+				
    	]),
-   html.P('Lista de archivos subidos previamente'),
+   html.Br(),
+   html.P('Bases de datos existentes'),
    html.Div(id='file-list-div',
    	children=[dcc.RadioItems(id='databases-options')]
    	),
@@ -35,11 +39,30 @@ app.layout = html.Div([
 	   children=[html.Div(id='phone-numbers')],
 	   type='default'
    ),
-
-   html.Div(id='wp-conversation')
+   dcc.Checklist(id='watch-conv',options=[{'label':'Ocultar conversación','value':'hidden'}],value=['hidden']),
+   html.Div(id='wp-conversation',style={'height':'500px','overflow':'scroll'}),
+   hml.Img(id='wordcloud-conv')
+   #dcc.Graph(id='wordcloud-conv')
 ])
 
+#hide or show conversation
+
+@app.callback(Output('wp-conversation','style'),
+              [Input('watch-conv','value')])
+def show_hide_conv(value):
+	if value is None:
+		value=[]
+	
+	
+	if 'hidden' in value:
+		return {'display':'none'}
+	else:
+		return {'height':'500px','overflow':'scroll'}
+	
+
+# Load conversation
 @app.callback(Output('wp-conversation','children'),
+              Output('wordcloud-conv','src'),
               [Input('numbers-menu','value')])
 def get_conversation(cel):
 	to_return=''
@@ -56,20 +79,23 @@ def get_conversation(cel):
 			msg=df.loc[i,'data']
 			orientation=df.loc[i,'key_from_me']
 			if orientation==1:
-				to_return.append(html.Div(msg,style={'margin-left':'50%','width':'40%'}))
+				to_return.append(html.Div(msg,style={'margin-left':'50%','width':'40%','background-color': 'lightgreen'}))
 				to_return.append(html.Br())
 			else:
-				to_return.append(html.Div(msgstyle={'width':'40%'}))
-			
-			
+				to_return.append(html.Div(msg,style={'width':'40%','background-color': 'lightgray'}))			
+		
 			
 	elif len(cel)>1:
-		to_return= 'Se seleccionó mas de un número porque lo que no se visualizará la conversación'
+		to_return= 'Se seleccionó mas de un número por lo que no se visualizará la conversación'
 	else:
 		to_return='No hay números seleccionados'
+	wc_fig=create_word_cloud(df[df['key_from_me']==0].dropna())
+	
+	
+	
 		
 		
-	return to_return
+	return to_return,wc_fig
 	
 # get bd info
 @app.callback(Output('phone-numbers','children'),

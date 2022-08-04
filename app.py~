@@ -1,6 +1,6 @@
 from dash import Dash,dcc,html,Output,Input,State,dash_table
 import os
-from utils import upload_file,list_files,dummy_connection,create_word_cloud
+from utils import upload_file,list_files,dummy_connection,create_word_cloud,bar_plot_words
 import sqlite3
 import pandas as pd
 from datetime import datetime,timedelta,date
@@ -8,6 +8,7 @@ import time
 import datetime
 import base64
 from icecream import ic
+
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -47,21 +48,43 @@ app.layout = html.Div([
         	  		style={'display':'inline-block'}
    ),
    html.Div(html.Button('Cargar BD',id='load-bd',n_clicks=0),style={'display':'inline-block'}),
+   html.Br(),
+   html.Div(id='datatable-div',style={'width':'40%'}),
    
    dcc.Loading(id='numbers-loader',   
 	   children=[html.Div(id='phone-numbers')],
 	   type='default'
    ),
    html.Br(),
+   
    html.Div([
-   	html.Img(id='wordcloud-conv',style={'width':'30%','display':'inline-block'}),
-   	html.Div(id='datatable-div',style={'width':'30%','display':'inline-block','margin-left':'50%','margin-top':'-17%'}),
+   	html.Img(id='wordcloud-conv',style={'width':'30%','display':'inline-block','margin-top':'6%'}),
+   	
+   	html.Div(id='bar-plot-words',style={'width':'30%','display':'inline-block','margin-left':'50%','margin-top':'-24%'})
    ]),
    dcc.Checklist(id='watch-conv',options=[{'label':'Ocultar conversación','value':'hidden'}],value=['hidden']),
    html.Div(id='wp-conversation',style={'height':'500px','overflow':'scroll'}),
+   dcc.Checklist(id='watch-db',options=[{'label':'Revisar tabla','value':'show'}]),
+   html.Div(id='db-table')
    
    #dcc.Graph(id='wordcloud-conv')
 ])
+#hide or show db
+
+@app.callback(Output('db-table','style'),
+				  [Input('watch-db','value')])
+def show_hide_db(value):
+	if value is None:
+		value=[]
+	if 'show' in value:
+		
+		return {'display':'block'}
+		
+	else:
+		return {'display':'none'}
+		
+		
+	
 
 #hide or show conversation
 
@@ -81,10 +104,14 @@ def show_hide_conv(value):
 # Load conversation
 @app.callback(Output('wp-conversation','children'),
               Output('wordcloud-conv','src'),
+              Output('db-table','children'),
+              Output('bar-plot-words','children'),
               [Input('numbers-menu','value'),
                Input('dates-dict','data')])
 def get_conversation(cel,dates_dict):
 	to_return=''
+	db_content=[]
+	fig_list=[]
 	print(dates_dict)
 	
 	if cel is None:
@@ -94,15 +121,13 @@ def get_conversation(cel,dates_dict):
 				FROM messages"""
 	df=pd.read_sql(query,db_obj.conn)
 	df=df.dropna()
-	
+	df=df[(df['timestamp']>=dates_dict['start_ts']) & (df['timestamp']<=dates_dict['end_ts']) ] 
 	
 	
 	
 	
 	if len(cel)>0:
-		df=df[df['key_remote_jid'].isin(cel)]
-		df=df[(df['timestamp']>=dates_dict['start_ts']) & (df['timestamp']<=dates_dict['end_ts']) ] 
-		
+		df=df[df['key_remote_jid'].isin(cel)]		
 		
 	
 	if len(cel)==1:
@@ -124,12 +149,31 @@ def get_conversation(cel,dates_dict):
 	else:
 		to_return='No hay números seleccionados'
 	wc_fig=create_word_cloud(df[df['key_from_me']==0].dropna())
+	fig_list.append(dcc.Graph(figure=bar_plot_words(df[df['key_from_me']==0].dropna())))
 	
+	db_content.append(
+		dash_table.DataTable(id='msg-ranking',
+			columns=[{'name':i,'id':i} for i in df.columns],
+			data=df.to_dict('records'),
+						
+			export_format='xlsx',
+			style_table={'overflowY':'auto','overflowX':'auto','width':'auto'},
+			style_header={'backgroundColor': '#393F56','fontWeight': 'bold','color':'white'},
+			page_size=5,
+			style_cell={'textAlign': 'left','font-family': 'Arial,Helvetica,sans-serif',
+   											'textOverflow': 'ellipsis',
+   											'overflow': 'hidden',
+   	   									'maxWidth': 0
+   					}
+						
+						
+				)	
+		)
 	
 	
 		
 		
-	return to_return,wc_fig
+	return to_return,wc_fig,db_content,fig_list
 	
 # get bd info
 @app.callback(Output('phone-numbers','children'),

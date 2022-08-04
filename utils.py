@@ -20,11 +20,15 @@ class text_cleaner:
 	def lower_text(self):
 		self.text=self.text.lower()
 	def remove_prepositions(self):
-		spanish_prep=['a','desde','hasta','para','por','segun','sin','sobre','tras','antes','en','la','el','durante','despues',\
-						 'hace','contra','cerca','o','ya','un','y','lo','de','con','que','del','lo']
+		spanish_prep=['a','desde','hasta','para','por','segun','sin','sobre','tras','antes','en','la','el','durante',\
+							'despues','hace','contra','cerca','o','ya','un','y','lo','de','con','que','del','lo','gracia',\
+							'gracias','muchas','hola','buenos','dias','saludo','buenas','a','e','i','o','u','buen','dia']
 		text_list=self.text.split()
 		text_list=[i.strip() for i in text_list]
 		text_list=[i for i in text_list if i not in spanish_prep]
+		
+	
+		#print(text_list)
 		self.text=' '.join(text_list)
 
 
@@ -50,7 +54,11 @@ def create_word_cloud(df):
 	cleaner_obj.lower_text()
 	cleaner_obj.remove_accents()
 	cleaner_obj.remove_prepositions()
-	wordcloud = WordCloud(max_font_size=40,background_color="white").generate(cleaner_obj.text)
+	try:
+		wordcloud = WordCloud(max_font_size=40,background_color="white").generate(cleaner_obj.text)
+	except:
+		wordcloud = WordCloud(max_font_size=40,background_color="white").generate('vacío')
+		
 	#wordcloud.to_file('test.png')
 	# export option1 (faster)
 	

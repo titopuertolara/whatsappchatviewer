@@ -1,6 +1,6 @@
 # whatsappchatviewer
 
-Clonar el repositorio, instalar los requerimientos y crear carpeta llamada **uploaded
+Clonar el repositorio, instalar los requerimientos y crear carpeta llamada **uploaded**
 ```
 pip3 install requirements.txt
 

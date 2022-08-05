@@ -20,6 +20,8 @@ files_list=list_files(path)
 db_obj=dummy_connection('')
 app.layout = html.Div([
 	html.Div([
+	   html.H3('Visor de mensajes de Whatsapp'),
+	   html.P('Suba el archivo con extensión .db, seleccionelo, escoja el rango de fechas a consultar y finalmente haga click en CARGAR DB'),
 	   html.Div(id='uploader-div',
 			children=[dcc.Upload(id='file-button',children=[html.Button('SUBIR ARCHIVO')])],
 			style={'display':'inline-block'}
@@ -58,9 +60,14 @@ app.layout = html.Div([
    html.Br(),
    
    html.Div([
-   	html.Img(id='wordcloud-conv',style={'width':'30%','display':'inline-block','margin-top':'6%'}),
-   	
-   	html.Div(id='bar-plot-words',style={'width':'30%','display':'inline-block','margin-left':'50%','margin-top':'-24%'})
+   	dcc.Loading(id='image-loading',
+   		children=[html.Img(id='wordcloud-conv',style={'width':'30%','display':'inline-block','margin-top':'6%'})],
+   		type='graph'
+   	),
+   	dcc.Loading(id='barplot-loading',
+   		children=[html.Div(id='bar-plot-words',style={'width':'30%','display':'inline-block','margin-left':'50%','margin-top':'-24%'})],
+   		type='dot'
+   	)
    ]),
    dcc.Checklist(id='watch-conv',options=[{'label':'Ocultar conversación','value':'hidden'}],value=['hidden']),
    html.Div(id='wp-conversation',style={'height':'500px','overflow':'scroll'}),

@@ -1,6 +1,6 @@
 # whatsappchatviewer
 
-Clonar el repositorio, instalar los requerimientos y crear carpeta llamada **uploaded** dentro de **whatsappchatviewer**
+Clonar el repositorio, instalar los requerimientos y crear carpeta llamada **uploaded** dentro de **whatsappchatviewer**. Este visor trabaja con el archivo msgstore.db
 ```
 pip3 install requirements.txt
 
